@@ -1,0 +1,23 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper to get user's role from Firestore
+    function getRole() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    match /groups/{groupId}/assignments/{assignmentId}/{studentId}_file {
+      allow read: if request.auth != null;
+      
+      // Only the student can upload their file, limit size to 50MB
+      allow create, update: if request.auth != null && request.auth.uid == studentId && request.resource.size < 50 * 1024 * 1024;
+      
+      // The student can delete their own file (to rescind), and teachers/admins can delete files (for cleanup)
+      allow delete: if request.auth != null && (
+        request.auth.uid == studentId || 
+        getRole() == 'teacher' || 
+        getRole() == 'admin'
+      );
+    }
+  }
+}
