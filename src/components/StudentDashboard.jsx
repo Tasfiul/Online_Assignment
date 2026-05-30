@@ -229,7 +229,7 @@ export default function StudentDashboard({ onOpenChat }) {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('http://localhost:5000/api/upload', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/upload`, {
           method: 'POST',
           body: formData
         });
@@ -304,7 +304,7 @@ export default function StudentDashboard({ onOpenChat }) {
     try {
       if (submission.backendFilename) {
         try {
-          await fetch(`http://localhost:5000/api/files/${submission.backendFilename}`, { method: 'DELETE' });
+          await fetch(`${import.meta.env.VITE_API_URL}/api/files/${submission.backendFilename}`, { method: 'DELETE' });
         } catch (backendErr) {
           console.warn("Backend deletion error", backendErr);
         }

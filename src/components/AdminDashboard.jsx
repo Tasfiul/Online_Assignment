@@ -140,7 +140,7 @@ export default function AdminDashboard() {
           const subData = subDoc.data();
           if (subData.backendFilename) {
             try {
-              await fetch(`http://localhost:5000/api/files/${subData.backendFilename}`, { method: 'DELETE' });
+              await fetch(`${import.meta.env.VITE_API_URL}/api/files/${subData.backendFilename}`, { method: 'DELETE' });
             } catch (backendErr) {
               console.warn(`Backend file delete warning: ${backendErr.message}`);
             }
@@ -193,7 +193,7 @@ export default function AdminDashboard() {
               const subData = subDoc.data();
               if (subData.backendFilename) {
                 try {
-                  await fetch(`http://localhost:5000/api/files/${subData.backendFilename}`, { method: 'DELETE' });
+                  await fetch(`${import.meta.env.VITE_API_URL}/api/files/${subData.backendFilename}`, { method: 'DELETE' });
                 } catch (backendErr) {
                   console.warn(`Backend file delete warning: ${backendErr.message}`);
                 }
@@ -294,7 +294,7 @@ export default function AdminDashboard() {
           const subData = subDoc.data();
           if (subData.backendFilename) {
             try {
-              await fetch(`http://localhost:5000/api/files/${subData.backendFilename}`, { method: 'DELETE' });
+              await fetch(`${import.meta.env.VITE_API_URL}/api/files/${subData.backendFilename}`, { method: 'DELETE' });
             } catch (backendErr) {
               console.warn(`Backend file delete warning: ${backendErr.message}`);
             }
@@ -349,7 +349,7 @@ export default function AdminDashboard() {
         const subData = subDoc.data();
         if (subData.backendFilename) {
           try {
-            await fetch(`http://localhost:5000/api/files/${subData.backendFilename}`, { method: 'DELETE' });
+            await fetch(`${import.meta.env.VITE_API_URL}/api/files/${subData.backendFilename}`, { method: 'DELETE' });
           } catch (backendErr) {
             console.warn(`Backend file delete warning: ${backendErr.message}`);
           }

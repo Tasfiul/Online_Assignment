@@ -181,7 +181,7 @@ export default function TeacherDashboard({ onOpenChat }) {
         for (const subDoc of subSnap.docs) {
           const subData = subDoc.data();
           if (subData.backendFilename) {
-            try { await fetch(`http://localhost:5000/api/files/${subData.backendFilename}`, { method: 'DELETE' }); } catch (e) { }
+            try { await fetch(`${import.meta.env.VITE_API_URL}/api/files/${subData.backendFilename}`, { method: 'DELETE' }); } catch (e) { }
           }
           await deleteDoc(subDoc.ref);
         }
@@ -259,7 +259,7 @@ export default function TeacherDashboard({ onOpenChat }) {
       for (const subDoc of subSnap.docs) {
         const subData = subDoc.data();
         if (subData.backendFilename) {
-          try { await fetch(`http://localhost:5000/api/files/${subData.backendFilename}`, { method: 'DELETE' }); } catch (e) { }
+          try { await fetch(`${import.meta.env.VITE_API_URL}/api/files/${subData.backendFilename}`, { method: 'DELETE' }); } catch (e) { }
         }
         await deleteDoc(subDoc.ref);
       }
