@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
 import { User, Image as ImageIcon, Trash2, CheckCircle, AlertTriangle, ShieldAlert } from 'lucide-react';
 
 export default function UserCenter() {
@@ -46,16 +45,26 @@ export default function UserCenter() {
     setUploadingAvatar(true);
     setSuccessMsg('');
     try {
-      const fileRef = ref(storage, `profiles/${currentUser.uid}_avatar`);
-      await uploadBytes(fileRef, file);
-      const downloadUrl = await getDownloadURL(fileRef);
+      const formData = new FormData();
+      formData.append('file', file);
       
-      await updateUserProfile(name, downloadUrl);
+      const response = await fetch('http://localhost:5000/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      
+      const data = await response.json();
+      
+      await updateUserProfile(name, data.url);
       setSuccessMsg('Profile picture updated!');
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
       console.error("Avatar upload failed:", err);
-      alert("Failed to upload avatar.");
+      alert("Failed to upload avatar via custom backend.");
     } finally {
       setUploadingAvatar(false);
     }

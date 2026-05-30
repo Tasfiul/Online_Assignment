@@ -17,6 +17,7 @@ export default function AssignmentChat({ assignment, onClose }) {
   const { currentUser, userProfile } = useAuth();
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Auto-scroll to bottom of chat
@@ -44,6 +45,13 @@ export default function AssignmentChat({ assignment, onClose }) {
       setTimeout(scrollToBottom, 50);
     }, (err) => {
       console.error("Firestore onSnapshot error:", err);
+      // If the error is about a missing index, log a helpful message
+      if (err.code === 'failed-precondition') {
+        console.error(
+          "This query requires a composite index. " +
+          "Deploy indexes with: npx firebase deploy --only firestore:indexes"
+        );
+      }
     });
 
     // Tear down subscription on unmount
@@ -53,16 +61,17 @@ export default function AssignmentChat({ assignment, onClose }) {
   // Handle message submission
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!inputText.trim() || !currentUser || !userProfile) return;
+    if (!inputText.trim() || !currentUser || !userProfile || sending) return;
 
     const messageText = inputText.trim();
     setInputText('');
+    setSending(true);
 
     try {
       await addDoc(collection(db, 'chats'), {
         assignmentId: assignment.assignmentId,
         senderId: currentUser.uid,
-        senderName: currentUser.displayName || 'Anonymous',
+        senderName: userProfile.name || currentUser.displayName || 'Anonymous',
         senderRole: userProfile.role,
         text: messageText,
         timestamp: serverTimestamp()
@@ -70,6 +79,8 @@ export default function AssignmentChat({ assignment, onClose }) {
     } catch (err) {
       console.error("Failed to append chat record:", err);
       alert("Failed to send message.");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -146,7 +157,7 @@ export default function AssignmentChat({ assignment, onClose }) {
             maxLength={1000}
             required
           />
-          <button type="submit" className="btn btn-primary" style={{ padding: '10px 16px' }}>
+          <button type="submit" className="btn btn-primary" style={{ padding: '10px 16px' }} disabled={sending}>
             <Send size={16} />
           </button>
         </form>

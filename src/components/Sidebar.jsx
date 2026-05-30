@@ -19,6 +19,8 @@ export default function Sidebar({
   setCurrentTab, 
   isOpen, 
   setIsOpen,
+  isCollapsed,
+  setIsCollapsed,
   notifications = []
 }) {
   const { userProfile, logout } = useAuth();
@@ -46,19 +48,23 @@ export default function Sidebar({
     { id: 'profile', label: 'User Center', icon: <User size={18} /> }
   ];
 
-  if (userProfile.role === 'admin') {
-    navigationItems.push({ id: 'admin', label: 'Admin Center', icon: <ShieldAlert size={18} /> });
-  }
+
 
   return (
     <>
-      {/* Mobile Toggle Button */}
+      {/* Mobile/Desktop Toggle Button */}
       <button 
         className="menu-toggle glass" 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (window.innerWidth <= 768) {
+            setIsOpen(!isOpen);
+          } else {
+            setIsCollapsed(!isCollapsed);
+          }
+        }}
         aria-label="Toggle Navigation"
       >
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
+        {(isOpen || isCollapsed) ? <X size={20} /> : <Menu size={20} />}
       </button>
 
       {/* Sidebar Panel */}

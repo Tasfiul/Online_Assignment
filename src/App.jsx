@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Login from './components/Login';
@@ -17,13 +17,72 @@ function MainAppContent() {
   // Navigation & UI Layout states
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeChatAssignment, setActiveChatAssignment] = useState(null);
+
+  // Theme state
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
   
   // Dynamic collections for notifications calculation
   const [groups, setGroups] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState([]);
+  const [chats, setChats] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [dismissedNotifs, setDismissedNotifs] = useState(new Set());
+  const [isNotifsLoaded, setIsNotifsLoaded] = useState(false);
+
+  // Dismiss a single notification by its ID
+  const handleDismissNotif = (notifId) => {
+    setDismissedNotifs(prev => {
+      const next = new Set(prev);
+      next.add(notifId);
+      return next;
+    });
+  };
+
+  // Count of unread notifications
+  const unreadCount = notifications.filter(n => !dismissedNotifs.has(n.id)).length;
+
+  // Load dismissed notifications from localStorage when user changes
+  useEffect(() => {
+    if (currentUser?.uid) {
+      try {
+        const stored = localStorage.getItem(`dismissedNotifs_${currentUser.uid}`);
+        if (stored) {
+          setDismissedNotifs(new Set(JSON.parse(stored)));
+        } else {
+          setDismissedNotifs(new Set());
+        }
+      } catch (e) {
+        console.error("Failed to load dismissed notifications", e);
+      } finally {
+        setIsNotifsLoaded(true);
+      }
+    } else {
+      setIsNotifsLoaded(false);
+    }
+  }, [currentUser?.uid]);
+
+  // Save dismissed notifications to localStorage whenever they change
+  useEffect(() => {
+    if (currentUser?.uid && isNotifsLoaded) {
+      try {
+        localStorage.setItem(`dismissedNotifs_${currentUser.uid}`, JSON.stringify(Array.from(dismissedNotifs)));
+      } catch (e) {
+        console.error("Failed to save dismissed notifications", e);
+      }
+    }
+  }, [dismissedNotifs, currentUser?.uid, isNotifsLoaded]);
 
   // Subscribe to real-time collections on auth load to compute alerts
   useEffect(() => {
@@ -56,10 +115,18 @@ function MainAppContent() {
       setSubmissions(list);
     });
 
+    // Listen to Chats
+    const unsubChats = onSnapshot(collection(db, 'chats'), (snap) => {
+      const list = [];
+      snap.forEach(d => list.push({ chatId: d.id, ...d.data() }));
+      setChats(list);
+    });
+
     return () => {
       unsubGroups();
       unsubAssign();
       unsubSubs();
+      unsubChats();
     };
   }, [currentUser, userProfile]);
 
@@ -72,10 +139,11 @@ function MainAppContent() {
       userId: currentUser.uid,
       groups,
       assignments,
-      submissions
+      submissions,
+      chats
     });
     setNotifications(computed);
-  }, [userProfile, groups, assignments, submissions]);
+  }, [userProfile, groups, assignments, submissions, chats]);
 
   if (loading) {
     return (
@@ -99,13 +167,10 @@ function MainAppContent() {
       return <UserCenter />;
     }
 
-    if (currentTab === 'admin' && userProfile.role === 'admin') {
-      return <AdminDashboard />;
-    }
-
     // Default dashboard based on role
     switch (userProfile.role) {
       case 'admin':
+        return <AdminDashboard />;
       case 'teacher':
         return (
           <TeacherDashboard 
@@ -128,13 +193,15 @@ function MainAppContent() {
   };
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       {/* Universal Sidebar */}
       <Sidebar 
         currentTab={currentTab} 
         setCurrentTab={setCurrentTab} 
         isOpen={sidebarOpen}
         setIsOpen={setSidebarOpen}
+        isCollapsed={sidebarCollapsed}
+        setIsCollapsed={setSidebarCollapsed}
       />
 
       {/* Main Panel Viewport */}
@@ -142,6 +209,21 @@ function MainAppContent() {
         {/* Top Header Bar for Notifications */}
         <header className="top-header glass">
           <div style={{ flexGrow: 1 }}></div>
+
+          {/* Theme Toggle */}
+          <button 
+            className="btn btn-secondary" 
+            style={{ padding: '8px', marginRight: '12px' }}
+            onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+            title="Toggle Theme"
+          >
+            {theme === 'dark' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="4.22" x2="19.78" y2="5.64"></line></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            )}
+          </button>
+
           <div className="notification-bell-container" style={{ position: 'relative' }}>
             <button 
               className="btn btn-secondary notification-btn" 
@@ -151,8 +233,8 @@ function MainAppContent() {
               }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-              {notifications.length > 0 && (
-                <span className="notification-badge">{notifications.length}</span>
+              {unreadCount > 0 && (
+                <span className="notification-badge">{unreadCount}</span>
               )}
             </button>
 
@@ -172,14 +254,27 @@ function MainAppContent() {
                   No active alerts.
                 </div>
               ) : (
-                notifications.map((alert) => (
-                  <div key={alert.id} className="notification-item" style={{ borderLeftColor: alert.type === 'danger' ? 'var(--danger)' : alert.type === 'warning' ? 'var(--warning)' : alert.type === 'success' ? 'var(--success)' : 'var(--primary)' }}>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <span className="notification-title">{alert.title}</span>
+                notifications.map((alert) => {
+                  const isDismissed = dismissedNotifs.has(alert.id);
+                  return (
+                    <div 
+                      key={alert.id} 
+                      className="notification-item" 
+                      style={{ 
+                        borderLeftColor: alert.type === 'danger' ? 'var(--danger)' : alert.type === 'warning' ? 'var(--warning)' : alert.type === 'success' ? 'var(--success)' : 'var(--primary)',
+                        opacity: isDismissed ? 0.5 : 1,
+                        cursor: isDismissed ? 'default' : 'pointer'
+                      }}
+                      onClick={() => !isDismissed && handleDismissNotif(alert.id)}
+                    >
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span className="notification-title">{alert.title}</span>
+                        {isDismissed && <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>✓ read</span>}
+                      </div>
+                      <span className="notification-desc">{alert.description}</span>
                     </div>
-                    <span className="notification-desc">{alert.description}</span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
