@@ -56,6 +56,53 @@ function MainAppContent() {
     });
   };
 
+  const handleNotifClick = (alert, isDismissed) => {
+    if (!isDismissed) handleDismissNotif(alert.id);
+    const el = document.getElementById('notif-panel');
+    if (el) el.style.display = 'none';
+
+    let groupId = null;
+    let assignmentId = null;
+    let openChat = false;
+
+    if (alert.id.startsWith('due-soon-') || alert.id.startsWith('overdue-') || alert.id.startsWith('deadline-passed-')) {
+      assignmentId = alert.id.split('-').pop();
+    } else if (alert.id.startsWith('group-joined-') || alert.id.startsWith('pending-approvals-')) {
+      groupId = alert.id.split('-').pop();
+    } else if (alert.id.startsWith('chat-')) {
+      assignmentId = alert.id.split('-').pop();
+      openChat = true;
+    }
+
+    let targetAssignment = null;
+    if (assignmentId) {
+      targetAssignment = assignments.find(a => a.assignmentId === assignmentId);
+      if (targetAssignment) {
+        groupId = targetAssignment.groupId;
+      }
+    }
+
+    if (currentTab !== 'dashboard') {
+      setCurrentTab('dashboard');
+    }
+
+    if (groupId) {
+      if (userProfile?.role === 'teacher') {
+        sessionStorage.setItem('teacher_activeGroupId', groupId);
+      } else if (userProfile?.role === 'student') {
+        sessionStorage.setItem('student_activeGroupId', groupId);
+      }
+      
+      window.dispatchEvent(new CustomEvent('dashboardNav', { 
+        detail: { groupId, assignmentId } 
+      }));
+    }
+
+    if (openChat && targetAssignment) {
+      setActiveChatAssignment(targetAssignment);
+    }
+  };
+
   // Count of unread notifications
   const unreadCount = notifications.filter(n => !dismissedNotifs.has(n.id)).length;
 
@@ -271,7 +318,7 @@ function MainAppContent() {
                         opacity: isDismissed ? 0.5 : 1,
                         cursor: isDismissed ? 'default' : 'pointer'
                       }}
-                      onClick={() => !isDismissed && handleDismissNotif(alert.id)}
+                      onClick={() => handleNotifClick(alert, isDismissed)}
                     >
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <span className="notification-title">{alert.title}</span>

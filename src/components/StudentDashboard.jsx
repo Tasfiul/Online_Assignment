@@ -125,7 +125,27 @@ export default function StudentDashboard({ onOpenChat }) {
         }
       }
     }
-  }, [loading, groups]);
+  }, [loading, groups, activeGroupDetail]);
+
+  useEffect(() => {
+    const handleNav = (e) => {
+      const { groupId, assignmentId } = e.detail;
+      if (groupId && groups.length > 0) {
+        const group = groups.find(g => g.groupId === groupId);
+        if (group) {
+          setActiveGroupDetail(group);
+          if (assignmentId) {
+            setTimeout(() => {
+              const el = document.getElementById(`assignment-${assignmentId}`);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 500);
+          }
+        }
+      }
+    };
+    window.addEventListener('dashboardNav', handleNav);
+    return () => window.removeEventListener('dashboardNav', handleNav);
+  }, [groups]);
 
   // Passcode Joining Pipeline
   const handleJoinGroup = async (e) => {

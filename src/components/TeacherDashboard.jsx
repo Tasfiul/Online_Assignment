@@ -137,7 +137,27 @@ export default function TeacherDashboard({ onOpenChat }) {
         }
       }
     }
-  }, [loading, groups]);
+  }, [loading, groups, activeGroupDetail]);
+
+  useEffect(() => {
+    const handleNav = (e) => {
+      const { groupId, assignmentId } = e.detail;
+      if (groupId && groups.length > 0) {
+        const group = groups.find(g => g.groupId === groupId);
+        if (group) {
+          setActiveGroupDetail(group);
+          if (assignmentId) {
+            setTimeout(() => {
+              const el = document.getElementById(`assignment-${assignmentId}`);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 500);
+          }
+        }
+      }
+    };
+    window.addEventListener('dashboardNav', handleNav);
+    return () => window.removeEventListener('dashboardNav', handleNav);
+  }, [groups]);
 
   // ─── Group CRUD ───────────────────────────────────────────────
 
@@ -496,7 +516,7 @@ export default function TeacherDashboard({ onOpenChat }) {
                 const uniqueStudents = Object.values(studentGroupsMap);
 
                 return (
-                  <div key={a.assignmentId} className="glass section-card" style={{ padding: '16px' }}>
+                  <div key={a.assignmentId} id={`assignment-${a.assignmentId}`} className="glass section-card" style={{ padding: '16px', scrollMarginTop: '20px' }}>
                     <div className="flex-between" style={{ marginBottom: '12px' }}>
                       <h3 style={{ fontSize: '16px', margin: 0 }}>{a.name}</h3>
                       <div className="flex-gap-10">
