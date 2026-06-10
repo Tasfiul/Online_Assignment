@@ -166,6 +166,14 @@ export default function TeacherDashboard({ onOpenChat }) {
     if (!groupForm.name || !groupForm.passcode) return;
     setActionLoading(true);
     try {
+      const q = query(collection(db, 'groups'), where('passcode', '==', groupForm.passcode));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        alert("This passcode is already in use by another classroom. Please choose a unique passcode.");
+        setActionLoading(false);
+        return;
+      }
+
       const newGroup = {
         ...groupForm,
         ownerId: currentUser.uid,
@@ -190,6 +198,15 @@ export default function TeacherDashboard({ onOpenChat }) {
     if (!groupForm.name || !groupForm.passcode) return;
     setActionLoading(true);
     try {
+      const q = query(collection(db, 'groups'), where('passcode', '==', groupForm.passcode));
+      const snap = await getDocs(q);
+      const isDuplicate = snap.docs.some(d => d.id !== showEditGroup.groupId);
+      if (isDuplicate) {
+        alert("This passcode is already in use by another classroom. Please choose a unique passcode.");
+        setActionLoading(false);
+        return;
+      }
+
       const groupRef = doc(db, 'groups', showEditGroup.groupId);
       await updateDoc(groupRef, {
         name: groupForm.name,
