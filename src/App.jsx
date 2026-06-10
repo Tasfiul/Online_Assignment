@@ -26,6 +26,17 @@ function MainAppContent() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeChatAssignment, setActiveChatAssignment] = useState(null);
 
+  const [viewMode, setViewModeRaw] = useState(() => {
+    return sessionStorage.getItem('nav_viewMode') || null;
+  });
+
+  const effectiveViewMode = viewMode || userProfile?.role;
+
+  const setViewMode = (mode) => {
+    sessionStorage.setItem('nav_viewMode', mode);
+    setViewModeRaw(mode);
+  };
+
   // Theme state
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('theme');
@@ -221,7 +232,7 @@ function MainAppContent() {
     }
 
     // Default dashboard based on role
-    switch (userProfile.role) {
+    switch (effectiveViewMode) {
       case 'admin':
         return <AdminDashboard />;
       case 'teacher':
@@ -255,6 +266,8 @@ function MainAppContent() {
         setIsOpen={setSidebarOpen}
         isCollapsed={sidebarCollapsed}
         setIsCollapsed={setSidebarCollapsed}
+        viewMode={effectiveViewMode}
+        setViewMode={setViewMode}
       />
 
       {/* Main Panel Viewport */}

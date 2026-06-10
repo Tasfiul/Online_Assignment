@@ -21,6 +21,8 @@ export default function Sidebar({
   setIsOpen,
   isCollapsed,
   setIsCollapsed,
+  viewMode,
+  setViewMode,
   notifications = []
 }) {
   const { userProfile, logout } = useAuth();
@@ -43,10 +45,22 @@ export default function Sidebar({
     }
   };
 
-  const navigationItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <BookOpen size={18} /> },
-    { id: 'profile', label: 'User Center', icon: <User size={18} /> }
-  ];
+  const navigationItems = [];
+
+  // Add Dashboard panels based on role
+  if (userProfile.role === 'admin') {
+    navigationItems.push({ id: 'dashboard-admin', tab: 'dashboard', mode: 'admin', label: 'Admin Panel', icon: <ShieldAlert size={18} /> });
+    navigationItems.push({ id: 'dashboard-teacher', tab: 'dashboard', mode: 'teacher', label: 'Teacher Panel', icon: <ListTodo size={18} /> });
+    navigationItems.push({ id: 'dashboard-student', tab: 'dashboard', mode: 'student', label: 'Student Panel', icon: <BookOpen size={18} /> });
+  } else if (userProfile.role === 'teacher') {
+    navigationItems.push({ id: 'dashboard-teacher', tab: 'dashboard', mode: 'teacher', label: 'Teacher Panel', icon: <ListTodo size={18} /> });
+    navigationItems.push({ id: 'dashboard-student', tab: 'dashboard', mode: 'student', label: 'Student Panel', icon: <BookOpen size={18} /> });
+  } else {
+    navigationItems.push({ id: 'dashboard-student', tab: 'dashboard', mode: 'student', label: 'Student Dashboard', icon: <BookOpen size={18} /> });
+  }
+
+  // Add Profile
+  navigationItems.push({ id: 'profile', tab: 'profile', mode: null, label: 'User Center', icon: <User size={18} /> });
 
 
 
@@ -89,19 +103,33 @@ export default function Sidebar({
 
         {/* Navigation Roster */}
         <nav className="nav-menu">
-          {navigationItems.map((item) => (
-            <button
-              key={item.id}
-              className={`nav-item ${currentTab === item.id ? 'active' : ''}`}
-              onClick={() => {
-                setCurrentTab(item.id);
-                setIsOpen(false); // Close sidebar on mobile select
-              }}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          ))}
+          {navigationItems.map((item) => {
+            let isActive = false;
+            if (item.tab === 'profile') {
+              isActive = currentTab === 'profile';
+            } else {
+              // For dashboard items, both tab must be 'dashboard' and mode must match viewMode
+              const currentMode = viewMode || userProfile.role;
+              isActive = currentTab === 'dashboard' && currentMode === item.mode;
+            }
+
+            return (
+              <button
+                key={item.id}
+                className={`nav-item ${isActive ? 'active' : ''}`}
+                onClick={() => {
+                  setCurrentTab(item.tab);
+                  if (item.mode) {
+                    setViewMode(item.mode);
+                  }
+                  setIsOpen(false); // Close sidebar on mobile select
+                }}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
 
           <button 
             className="nav-item logout-btn" 
