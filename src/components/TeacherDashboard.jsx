@@ -31,7 +31,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { formatDate } from '../utils/helpers';
+import { formatDate, parseDescriptionLinks } from '../utils/helpers';
 import JSZip from 'jszip';
 
 export default function TeacherDashboard({ onOpenChat }) {
@@ -44,7 +44,15 @@ export default function TeacherDashboard({ onOpenChat }) {
   const [allUsers, setAllUsers] = useState({});
   
   // Navigation & Selection States
-  const [activeGroupDetail, setActiveGroupDetail] = useState(null);
+  const [activeGroupDetail, setActiveGroupDetailRaw] = useState(null);
+  const setActiveGroupDetail = (group) => {
+    if (group) {
+      sessionStorage.setItem('teacher_activeGroupId', group.groupId);
+    } else {
+      sessionStorage.removeItem('teacher_activeGroupId');
+    }
+    setActiveGroupDetailRaw(group);
+  };
   
   // UI States
   const [loading, setLoading] = useState(true);
@@ -115,6 +123,21 @@ export default function TeacherDashboard({ onOpenChat }) {
   useEffect(() => {
     loadTeacherData();
   }, [loadTeacherData]);
+
+  // Restore active group detail from sessionStorage after data loads
+  useEffect(() => {
+    if (!loading && groups.length > 0 && !activeGroupDetail) {
+      const savedGroupId = sessionStorage.getItem('teacher_activeGroupId');
+      if (savedGroupId) {
+        const found = groups.find(g => g.groupId === savedGroupId);
+        if (found) {
+          setActiveGroupDetailRaw(found);
+        } else {
+          sessionStorage.removeItem('teacher_activeGroupId');
+        }
+      }
+    }
+  }, [loading, groups]);
 
   // ─── Group CRUD ───────────────────────────────────────────────
 
@@ -481,6 +504,11 @@ export default function TeacherDashboard({ onOpenChat }) {
                         <button className="btn btn-danger" style={{ padding: '8px 12px' }} onClick={() => handleDeleteAssignment(a.assignmentId)}><Trash2 size={16} /></button>
                       </div>
                     </div>
+                    {a.description && (
+                      <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 12px 0', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                        {parseDescriptionLinks(a.description)}
+                      </p>
+                    )}
                     <div className="flex-between" style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px' }}>
                       <span>Due: {formatDate(a.dueDate)}</span>
                       <span className="badge badge-info">{uniqueStudents.length} Student{uniqueStudents.length !== 1 && 's'} Submitted</span>
@@ -491,8 +519,8 @@ export default function TeacherDashboard({ onOpenChat }) {
                       <div className="flex-between" style={{ marginBottom: '12px' }}>
                         <span style={{ fontSize: '13px', fontWeight: 600 }}>Student Work</span>
                         <div className="flex-gap-10">
-                          <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => onOpenChat(a)}>
-                            <MessageSquare size={12} /> Forum
+                          <button className="btn btn-secondary" style={{ padding: '8px 16px', fontSize: '14px' }} onClick={() => onOpenChat(a)}>
+                            <MessageSquare size={16} /> Forum
                           </button>
                         </div>
                       </div>

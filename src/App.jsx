@@ -15,7 +15,13 @@ function MainAppContent() {
   const { currentUser, userProfile, loading } = useAuth();
   
   // Navigation & UI Layout states
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [currentTab, setCurrentTabRaw] = useState(() => {
+    return sessionStorage.getItem('nav_currentTab') || 'dashboard';
+  });
+  const setCurrentTab = (tab) => {
+    sessionStorage.setItem('nav_currentTab', tab);
+    setCurrentTabRaw(tab);
+  };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeChatAssignment, setActiveChatAssignment] = useState(null);
@@ -238,7 +244,7 @@ function MainAppContent() {
               )}
             </button>
 
-            <div id="notif-panel" className="notifications-panel glass animate-fade-in" style={{ display: 'none', position: 'absolute', right: 0, top: '48px', width: '320px' }}>
+            <div id="notif-panel" className="notifications-panel animate-fade-in" style={{ display: 'none', position: 'absolute', right: 0, top: '48px', width: '320px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--card-shadow)', zIndex: 1000, padding: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '8px' }}>
                 <span style={{ fontWeight: 600, fontSize: '14px' }}>Notifications</span>
                 <button 

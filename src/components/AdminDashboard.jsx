@@ -30,7 +30,13 @@ export default function AdminDashboard() {
   const { currentUser } = useAuth();
   
   // Tabs
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeTab, setActiveTabRaw] = useState(() => {
+    return sessionStorage.getItem('admin_activeTab') || 'users';
+  });
+  const setActiveTab = (tab) => {
+    sessionStorage.setItem('admin_activeTab', tab);
+    setActiveTabRaw(tab);
+  };
 
   // Data State
   const [users, setUsers] = useState([]);

@@ -37,7 +37,15 @@ export default function StudentDashboard({ onOpenChat }) {
   const [allUsers, setAllUsers] = useState({});
   
   // Navigation & Selection States
-  const [activeGroupDetail, setActiveGroupDetail] = useState(null);
+  const [activeGroupDetail, setActiveGroupDetailRaw] = useState(null);
+  const setActiveGroupDetail = (group) => {
+    if (group) {
+      sessionStorage.setItem('student_activeGroupId', group.groupId);
+    } else {
+      sessionStorage.removeItem('student_activeGroupId');
+    }
+    setActiveGroupDetailRaw(group);
+  };
   const [showJoinGroup, setShowJoinGroup] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   
@@ -103,6 +111,21 @@ export default function StudentDashboard({ onOpenChat }) {
   useEffect(() => {
     loadStudentData();
   }, [loadStudentData]);
+
+  // Restore active group detail from sessionStorage after data loads
+  useEffect(() => {
+    if (!loading && groups.length > 0 && !activeGroupDetail) {
+      const savedGroupId = sessionStorage.getItem('student_activeGroupId');
+      if (savedGroupId) {
+        const found = groups.find(g => g.groupId === savedGroupId);
+        if (found) {
+          setActiveGroupDetailRaw(found);
+        } else {
+          sessionStorage.removeItem('student_activeGroupId');
+        }
+      }
+    }
+  }, [loading, groups]);
 
   // Passcode Joining Pipeline
   const handleJoinGroup = async (e) => {
