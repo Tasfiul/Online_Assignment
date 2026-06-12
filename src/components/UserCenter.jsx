@@ -48,8 +48,7 @@ export default function UserCenter() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const baseUrl = import.meta.env.VITE_API_URL?.replace('localhost', window.location.hostname) || `http://${window.location.hostname}:5000`;
-      const response = await fetch(`${baseUrl}/api/upload`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/upload`, {
         method: 'POST',
         body: formData
       });

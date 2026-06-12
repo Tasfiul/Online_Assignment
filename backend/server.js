@@ -8,7 +8,31 @@ const { Readable } = require('stream');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
-app.use(cors());
+
+// CORS configuration for production (Firebase Hosting) and local dev
+const allowedOrigins = [
+  'https://online-submission-app-2f610.web.app',
+  'https://online-submission-app-2f610.firebaseapp.com',
+  'https://online-assignment-86mg.onrender.com',
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'http://localhost:3000'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
 app.use(express.json());
 
 const mongoURI = process.env.MONGO_URI;
